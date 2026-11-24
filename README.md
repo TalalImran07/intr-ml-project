@@ -15,13 +15,28 @@ intr-oxford-pet/
 ├── third_party/INTR/     official INTR code, UNMODIFIED (commit 69b8a69, Apache 2.0)
 ├── intr_pet/
 │   ├── data.py           Pet dataset, reduced image sizes, loaders
-│   └── model.py          builds INTR from the official code; DETR init; ablation options
+│   ├── model.py          builds INTR from the official code; DETR init; ablation options
+│   ├── baseline.py       ResNet-50 with masked average pooling (R3)
+│   ├── inference.py      single-image pipeline used by the app
+│   └── results.py        shared predictions-file writer
 ├── prepare_data.py       downloads Oxford-IIIT Pet, writes data/pet_split.csv + classes.json
-├── train.py              training + evaluation (R1 / R2 / INTR-FC)
-├── kaggle_run.ipynb      runs prepare_data.py + train.py on a Kaggle GPU
+├── train.py              INTR training + evaluation (R1 / R2 / INTR-FC)
+├── train_resnet.py       ResNet-50 baseline (R3)
+├── evaluate.py           accuracy analysis, figures, significance tests
+├── evaluate_weights.py   re-runs the final test evaluation from a saved weights file
+├── attention_metrics.py  insertion/deletion, attention on the pet, head diversity, figures
+├── app/streamlit_app.py  deployed demo
+├── kaggle_run.ipynb      runs prepare_data.py + training on a Kaggle GPU
+├── kaggle_analysis.ipynb runs both analysis scripts on finished runs (Kaggle GPU)
 └── requirements.txt
 ```
-Evaluation scripts, the ResNet-50 baseline and the Streamlit app will be added next.
+
+| Run | Model | Command |
+|---|---|---|
+| R1 | INTR, the paper's model (reproduction) — **used by the app** | `train.py --run_name R1` |
+| R2 | INTR with 1-head decoder cross-attention (ablation) | `train.py --run_name R2 --dec_heads 1` |
+| FC | INTR-FC: one presence vector per class (ablation) | `train.py --run_name FC --head fc` |
+| R3 | ResNet-50 fine-tuned under the same settings (paper's baseline) | `train_resnet.py --run_name R3` |
 
 ## Code attribution
 
@@ -34,6 +49,10 @@ Evaluation scripts, the ResNet-50 baseline and the Streamlit app will be added n
 | Model builder, 1-head decoder option, INTR-FC head, weight save/load | **Ours** | `intr_pet/model.py` |
 | Dataset download, split file, data audit, near-duplicate flags | **Ours** (from our Deliverable 2 notebook) | `prepare_data.py`, `intr_pet/data.py` |
 | Kaggle runner | **Ours** | `kaggle_run.ipynb` |
+| ResNet-50 baseline training (masked pooling, SGD recipe) | **Ours**; ImageNet weights from torchvision | `train_resnet.py`, `intr_pet/baseline.py` |
+| Evaluation and statistics | **Ours** | `evaluate.py` |
+| Interpretability metrics (insertion/deletion protocol from Petsiuk et al. 2018 as used in the paper; Grad-CAM written from its definition) | **Ours** | `attention_metrics.py` |
+| Inference pipeline and Streamlit app | **Ours** | `intr_pet/inference.py`, `app/` |
 
 ## Setup
 
@@ -73,6 +92,49 @@ Outputs in `outputs/<run>/`:
 
 The reported result is always the **last epoch**: the dataset has no validation split
 (the paper also evaluates on the test set), so we do not select epochs by test accuracy.
+
+## Evaluation
+
+```bash
+python evaluate.py --runs outputs/R1 outputs/R3 --data_root data --out_dir analysis
+```
+Writes `summary.md` (top-1 with 95% interval, top-5, macro-F1, cat/dog accuracy, cat↔dog
+errors, accuracy without the 19 near-duplicates), per-breed tables, the most frequent
+confusions, confusion-matrix / per-breed / training-curve figures, and an exact McNemar
+test between every pair of runs (`mcnemar.csv`).
+
+## Interpretability analysis
+
+```bash
+python attention_metrics.py --intr outputs/R1/intr_pet_R1.pth [outputs/R2/intr_pet_R2.pth outputs/FC/intr_pet_FC.pth] \
+    --judge outputs/R3/resnet50_pet_R3.pth --data_root data --out_dir analysis --resolutions 320 384 448 512
+```
+On every test image that all models classify correctly (the paper's protocol), using the
+last decoder layer and the true class's query:
+* **insertion / deletion** AUC with the R3 ResNet-50 as the shared judge, for each INTR run
+  (heads averaged, as in the paper), Grad-CAM on R3 and a random ranking;
+* **attention on the pet**: share of attention on trimap pet pixels vs a uniform map;
+* **head diversity**: mean pairwise IoU of the heads' top-10% cells (lower = more distinct);
+* **class distinctiveness**: IoU of the true and runner-up class maps (lower = more distinct);
+* optional **test-resolution check**, and head / method comparison figures.
+
+## Running the app (deployment)
+
+Pipeline: **input photo → preprocessing (short side 384 px, RGB, ImageNet normalisation)
+→ trained INTR → 37 breed probabilities → prediction + cross-attention maps**.
+
+```bash
+pip install -r requirements.txt
+# put the trained weights at weights/intr_pet_R1.pth (download link at the top of this file)
+python prepare_data.py --root data      # optional: enables the "random test image" tab
+streamlit run app/streamlit_app.py      # opens http://localhost:8501
+```
+
+* **Input:** a JPG/PNG upload, a camera photo, or a random image from the official test set.
+* **Output:** the predicted breed and species, top-5 probabilities, a low-confidence warning,
+  the attention map of every head for the predicted breed, the same maps for any other
+  top-5 breed ("why not X?"), the raw logits, timings, and the SHA-256 of the weights file.
+* Runs on CPU (no GPU needed); about 0.3–1 s per image on a laptop.
 
 ## Settings: paper vs ours (R1)
 

@@ -1,8 +1,11 @@
-# Tested with torch 2.15 / torchvision 0.29 (CPU) in development; Kaggle's preinstalled
-# torch 2.x / torchvision builds work as-is (nothing to install there).
+# Training / evaluation (Kaggle's preinstalled torch + torchvision work as-is)
 torch>=2.1
 torchvision>=0.16
 numpy
 pandas
 pillow
 packaging
+matplotlib
+tabulate
+# App
+streamlit>=1.50
