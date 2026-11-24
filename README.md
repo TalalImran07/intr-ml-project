@@ -135,6 +135,9 @@ streamlit run app/streamlit_app.py      # opens http://localhost:8501
   the attention map of every head for the predicted breed, the same maps for any other
   top-5 breed ("why not X?"), the raw logits, timings, and the SHA-256 of the weights file.
 * Runs on CPU (no GPU needed); about 0.3–1 s per image on a laptop.
+* **Ablation view (optional):** put the 1-head model at `weights/intr_pet_R2.pth` and switch on
+  *Compare with the 1-head model (R2)* in the sidebar to see R2's prediction and single
+  attention map next to R1's maps for the same photo. Without that file the app is unchanged.
 
 ## Settings: paper vs ours (R1)
 

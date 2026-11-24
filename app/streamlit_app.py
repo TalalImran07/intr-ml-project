@@ -4,6 +4,7 @@
 Run from the project folder:
     streamlit run app/streamlit_app.py
 Weights: weights/intr_pet_R1.pth (or set INTR_WEIGHTS=/path/to/file.pth).
+Optional ablation comparison: weights/intr_pet_R2.pth (1-head model, or set INTR_COMPARE_WEIGHTS).
 """
 import os
 import sys
@@ -21,6 +22,7 @@ from intr_pet.inference import INTRPredictor, heatmap_overlay  # noqa: E402
 
 WEIGHTS = Path(os.environ.get("INTR_WEIGHTS", ROOT / "weights" / "intr_pet_R1.pth"))
 WEIGHTS_URL = os.environ.get("INTR_WEIGHTS_URL", "")      # Hugging Face link, added later
+COMPARE = Path(os.environ.get("INTR_COMPARE_WEIGHTS", ROOT / "weights" / "intr_pet_R2.pth"))
 DATA_ROOT = Path(os.environ.get("INTR_DATA", ROOT / "data"))
 
 st.set_page_config(page_title="INTR · Interpretable pet breed classifier", page_icon="🐾",
@@ -80,6 +82,16 @@ layer = st.sidebar.select_slider("Decoder layer shown", options=list(range(1, cf
                                  help="The paper visualises the last (6th) decoder layer.")
 alpha = st.sidebar.slider("Heat-map opacity", 0.2, 0.8, 0.5, 0.05)
 threshold = st.sidebar.slider("Low-confidence warning below", 0.1, 0.9, 0.5, 0.05)
+pred2 = None
+if COMPARE.exists():
+    st.sidebar.divider()
+    if st.sidebar.toggle("Compare with the 1-head model (R2)", value=False,
+                         help="Our ablation: identical training, but 1 cross-attention head instead of 8."):
+        pred2 = get_predictor(str(COMPARE))
+        st.sidebar.markdown(f"**R2 weights:** `{COMPARE.name}`\n\n**SHA-256:** "
+                            f"`{pred2.weights_sha256[:16]}…`"
+                            + (f"\n\n**R2 test top-1:** {pred2.metrics['top1']}%"
+                               if "top1" in pred2.metrics else ""))
 
 # ------------------------------------------------------------------ input
 st.title("Which breed is it — and where did the model look?")
@@ -157,6 +169,35 @@ st.subheader(f"Where did the “{pred.classes[top]}” query look?")
 st.caption(f"Cross-attention of decoder layer {layer}. Each head learns to look for a different "
            "trait; red = high attention.")
 head_grid(r["image"], r["attention"][:, top], alpha)
+
+if pred2 is not None:
+    st.divider()
+    st.subheader("Ablation: 8 heads (R1) vs 1 head (R2)")
+    t1 = time.perf_counter()
+    r2 = pred2.predict(image, layer=layer - 1)
+    ms2 = (time.perf_counter() - t1) * 1000
+    top2 = r2["order"][0]
+    agree = top2 == top
+    st.caption("Both models were trained identically; the only difference is the number of "
+               "cross-attention heads in the decoder. R1 splits its search into 8 maps, R2 does "
+               "a single search.")
+    c1, c2 = st.columns(2)
+    c1.metric("R1 (8 heads) predicts", pred.classes[top], f"{p_top:.1%}", delta_color="off")
+    c2.metric("R2 (1 head) predicts", pred2.classes[top2], f"{float(r2['probs'][top2]):.1%}",
+              delta_color="off")
+    if not agree:
+        st.info("The two models disagree on this image.")
+    cols = st.columns(3)
+    cols[0].image(r["image"], caption="Input", width="stretch")
+    cols[1].image(heatmap_overlay(r["image"], r["attention"][:, top].mean(0), alpha),
+                  caption=f"R1: average of 8 heads ({pred.classes[top]})", width="stretch")
+    cols[2].image(heatmap_overlay(r["image"], r2["attention"][0, top], alpha),
+                  caption=f"R2: its single head ({pred.classes[top]})", width="stretch")
+    if not agree:
+        st.image(heatmap_overlay(r["image"], r2["attention"][0, top2], alpha), width=300,
+                 caption=f"R2's map for its own prediction ({pred2.classes[top2]})")
+    st.caption(f"Same breed query, same decoder layer ({layer}). R1's 8 individual head maps are "
+               f"shown above. R2 inference: {ms2:.0f} ms.")
 
 st.divider()
 st.subheader("Why not another breed?")
