@@ -1,0 +1,85 @@
+{
+  "runs": [
+    {
+      "run": "R1",
+      "n_test": 3669,
+      "top1": 91.74,
+      "top1_ci95": "90.8-92.6",
+      "top5": 98.26,
+      "macro_f1": 91.64,
+      "top1_cats": 90.03,
+      "top1_dogs": 92.56,
+      "species_errors": 15,
+      "species_error_rate": 0.41,
+      "top1_without_dups": 91.7,
+      "n_without_dups": 3650,
+      "worst_breed": "American Pit Bull Terrier",
+      "worst_breed_acc": 53.0,
+      "top_confusion": "American Pit Bull Terrier -> Staffordshire Bull Terrier (21)"
+    },
+    {
+      "run": "R2",
+      "n_test": 3669,
+      "top1": 92.26,
+      "top1_ci95": "91.3-93.1",
+      "top5": 98.2,
+      "macro_f1": 92.09,
+      "top1_cats": 90.87,
+      "top1_dogs": 92.92,
+      "species_errors": 6,
+      "species_error_rate": 0.16,
+      "top1_without_dups": 92.22,
+      "n_without_dups": 3650,
+      "worst_breed": "American Pit Bull Terrier",
+      "worst_breed_acc": 49.0,
+      "top_confusion": "Staffordshire Bull Terrier -> American Bulldog (23)"
+    },
+    {
+      "run": "R3",
+      "n_test": 3669,
+      "top1": 93.0,
+      "top1_ci95": "92.1-93.8",
+      "top5": 99.37,
+      "macro_f1": 92.89,
+      "top1_cats": 91.12,
+      "top1_dogs": 93.89,
+      "species_errors": 19,
+      "species_error_rate": 0.52,
+      "top1_without_dups": 92.96,
+      "n_without_dups": 3650,
+      "worst_breed": "American Pit Bull Terrier",
+      "worst_breed_acc": 54.0,
+      "top_confusion": "American Pit Bull Terrier -> Staffordshire Bull Terrier (22)"
+    }
+  ],
+  "mcnemar": [
+    {
+      "run_a": "R1",
+      "run_b": "R2",
+      "n": 3669,
+      "only_a_correct": 99,
+      "only_b_correct": 118,
+      "p_value": 0.2217
+    },
+    {
+      "run_a": "R1",
+      "run_b": "R3",
+      "n": 3669,
+      "only_a_correct": 89,
+      "only_b_correct": 135,
+      "p_value": 0.0026
+    },
+    {
+      "run_a": "R2",
+      "run_b": "R3",
+      "n": 3669,
+      "only_a_correct": 99,
+      "only_b_correct": 126,
+      "p_value": 0.0828
+    }
+  ],
+  "paper": {
+    "INTR": 90.4,
+    "ResNet-50": 89.5
+  }
+}

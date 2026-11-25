@@ -1,0 +1,38 @@
+class_id,breed,species,n_test,accuracy,precision,f1
+0,Abyssinian,cat,98,92.86,93.81,93.33
+1,American Bulldog,dog,100,93.0,67.88,78.48
+2,American Pit Bull Terrier,dog,100,53.0,85.48,65.43
+3,Basset Hound,dog,100,94.0,84.68,89.1
+4,Beagle,dog,100,83.0,89.25,86.01
+5,Bengal,cat,100,89.0,89.0,89.0
+6,Birman,cat,100,90.0,77.59,83.33
+7,Bombay,cat,88,97.73,91.49,94.51
+8,Boxer,dog,99,93.94,92.08,93.0
+9,British Shorthair,cat,100,84.0,92.31,87.96
+10,Chihuahua,dog,100,86.0,94.51,90.05
+11,Egyptian Mau,cat,97,89.69,92.55,91.1
+12,English Cocker Spaniel,dog,100,95.0,93.14,94.06
+13,English Setter,dog,100,95.0,97.94,96.45
+14,German Shorthaired,dog,100,100.0,90.09,94.79
+15,Great Pyrenees,dog,100,95.0,98.96,96.94
+16,Havanese,dog,100,96.0,96.0,96.0
+17,Japanese Chin,dog,100,100.0,99.01,99.5
+18,Keeshond,dog,99,100.0,99.0,99.5
+19,Leonberger,dog,100,95.0,98.96,96.94
+20,Maine Coon,cat,100,89.0,91.75,90.36
+21,Miniature Pinscher,dog,100,87.0,92.55,89.69
+22,Newfoundland,dog,100,97.0,96.04,96.52
+23,Persian,cat,100,90.0,97.83,93.75
+24,Pomeranian,dog,100,96.0,98.97,97.46
+25,Pug,dog,100,99.0,100.0,99.5
+26,Ragdoll,cat,100,80.0,84.21,82.05
+27,Russian Blue,cat,100,92.0,89.32,90.64
+28,Saint Bernard,dog,100,98.0,92.45,95.15
+29,Samoyed,dog,100,98.0,98.0,98.0
+30,Scottish Terrier,dog,99,97.98,92.38,95.1
+31,Shiba Inu,dog,100,98.0,98.99,98.49
+32,Siamese,cat,100,90.0,88.24,89.11
+33,Sphynx,cat,100,97.0,100.0,98.48
+34,Staffordshire Bull Terrier,dog,89,68.54,64.21,66.3
+35,Wheaten Terrier,dog,100,95.0,96.94,95.96
+36,Yorkshire Terrier,dog,100,98.0,98.99,98.49

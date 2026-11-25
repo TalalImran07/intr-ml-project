@@ -1,0 +1,5 @@
+method,insertion,deletion,pet_attention,pet_attention_min_head,head_iou,class_iou
+INTR-R1,0.7792,0.422,0.5513,0.1713,0.159,0.1642
+INTR-R2,0.6792,0.5587,0.4661,0.4661,,0.0795
+Grad-CAM (R3),0.9321,0.1904,,,,
+Random,0.5369,0.4707,,,,

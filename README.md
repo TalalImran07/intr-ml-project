@@ -6,7 +6,36 @@ Team: Talal Imran (36237) · Warisha Athar (36243) · Muhammad Zain (29403)
 Paper: D. Paul *et al.*, "A Simple Interpretable Transformer for Fine-Grained Image
 Classification and Analysis", ICLR 2024. Official code: https://github.com/Imageomics/INTR
 
-> **Trained weights:** _link to be added (Hugging Face)_
+> **Trained weights:** https://huggingface.co/Talloo/intr-oxford-pet
+> (`intr_pet_R1.pth`, `intr_pet_R2.pth`, `resnet50_pet_R3.pth`)
+
+## Results (Oxford-IIIT Pet test set, 3,669 images, last epoch, single runs)
+
+| Run | Model | Top-1 (%) | 95% interval | Top-5 (%) | Paper |
+|---|---|---|---|---|---|
+| R1 | INTR (DETR-R50), 8 heads — reproduction | **91.74** | 90.8–92.6 | 98.26 | 90.4 |
+| R2 | INTR, 1 decoder cross-attention head — ablation | 92.26 | 91.3–93.1 | 98.20 | – |
+| R3 | ResNet-50 baseline, same data and sizes | 93.00 | 92.1–93.8 | 99.37 | 89.5 |
+
+McNemar: R1 vs R2 p = 0.22 (no difference); R1 vs R3 p = 0.003.
+
+Explanations (3,209 test images correct for all models; judge = R3):
+
+| Map | Insertion ↑ | Deletion ↓ | Attention on pet ↑ | Head IoU ↓ |
+|---|---|---|---|---|
+| R1, 8 heads (average) | 0.779 | 0.422 | 0.551 | 0.159 |
+| R2, 1 head | 0.679 | 0.559 | 0.466 | – |
+| Grad-CAM on R3 | 0.932 | 0.190 | – | – |
+| Random / uniform | 0.537 | 0.471 | 0.422 | – |
+
+The heads do not change accuracy, but they make the maps clearly more faithful and more
+focused on the animal (all paired differences R1−R2 significant). See the report for details.
+
+| Weights file | SHA-256 |
+|---|---|
+| `intr_pet_R1.pth` | `a250e0f69d7732504c162364868218c2bb5ac14257520f8a08137060d5c681c3` |
+| `intr_pet_R2.pth` | `eb554261c63b2f2403276b8d74f491dc702143d5ab87eb85d8c2f263c2d14184` |
+| `resnet50_pet_R3.pth` | `e78804b42c831704600626861fef619fba87285d9afe4276b42f6e2bc0ecd3b2` |
 
 ## What is in this repository
 
@@ -125,17 +154,19 @@ Pipeline: **input photo → preprocessing (short side 384 px, RGB, ImageNet norm
 
 ```bash
 pip install -r requirements.txt
-# put the trained weights at weights/intr_pet_R1.pth (download link at the top of this file)
+mkdir -p weights
+wget -P weights https://huggingface.co/Talloo/intr-oxford-pet/resolve/main/intr_pet_R1.pth
+wget -P weights https://huggingface.co/Talloo/intr-oxford-pet/resolve/main/intr_pet_R2.pth   # optional: ablation view
 streamlit run app/streamlit_app.py      # opens http://localhost:8501
 ```
 
 * **Input:** one JPG/PNG/WebP/BMP photo of a cat or dog, uploaded in the browser.
-* **Output:** the predicted breed and species with its confidence, the top-5 breeds, a
-  low-confidence warning, the attention map of every head for the predicted breed, the same
+* **Output:** the predicted breed and species, a low-confidence warning, the confidence and
+  top-5 breeds (collapsible panel under the image), the attention map of every head for the predicted breed, the same
   maps for any other top-5 breed ("why not X?"), and a collapsible panel with the pipeline
   steps (input size, preprocessed size, feature grid, timing), the raw logits and the SHA-256
   of the weights file.
-* Runs on CPU (no GPU needed); about 0.3–1 s per image on a laptop.
+* Runs on CPU (no GPU needed); about 0.2–1 s per image on a laptop.
 * **Ablation view (optional):** put the 1-head model at `weights/intr_pet_R2.pth` and switch on
   *Compare with the 1-head model (R2)* in the sidebar to see R2's prediction and single
   attention map next to R1's maps for the same photo. Without that file the app is unchanged.
@@ -162,3 +193,10 @@ Note on the last row: the official `main.py` builds the optimizer while the ResN
 and layer1 are frozen and only afterwards sets `requires_grad=True`, so those layers get
 gradients (which count in the clipping norm) but are never updated. `train.py`
 reproduces this with a learning-rate-0 parameter group.
+
+## Frozen results
+
+`results/` holds the outputs the report is built from: `R1|R2|R3/metrics.json`, the training
+logs, and `results/analysis/` (output of `evaluate.py` and `attention_metrics.py`: summary,
+per-breed tables, confusions, McNemar tests, insertion/deletion and attention metrics,
+resolution check, figures).

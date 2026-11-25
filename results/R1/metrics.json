@@ -1,0 +1,12 @@
+{
+  "run": "R1",
+  "epochs": 100,
+  "top1": 91.74,
+  "top5": 98.26,
+  "n_test": 3669,
+  "top1_without_cross_split_dups": 91.7,
+  "n_test_without_dups": 3650,
+  "paper_top1_pet": 90.4,
+  "total_train_hours_this_session": 5.72,
+  "weights_sha256": "a250e0f69d7732504c162364868218c2bb5ac14257520f8a08137060d5c681c3"
+}

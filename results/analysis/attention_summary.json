@@ -1,0 +1,23 @@
+{
+  "n_images": 3209,
+  "steps": 16,
+  "judge": "R3 ResNet-50 (shared)",
+  "metrics": {
+    "INTR-R1|insertion": 0.7792,
+    "INTR-R1|deletion": 0.422,
+    "INTR-R2|insertion": 0.6792,
+    "INTR-R2|deletion": 0.5587,
+    "Grad-CAM (R3)|insertion": 0.9321,
+    "Grad-CAM (R3)|deletion": 0.1904,
+    "Random|insertion": 0.5369,
+    "Random|deletion": 0.4707,
+    "uniform|pet_attention": 0.422,
+    "INTR-R1|pet_attention": 0.5513,
+    "INTR-R1|pet_attention_min_head": 0.1713,
+    "INTR-R2|pet_attention": 0.4661,
+    "INTR-R2|pet_attention_min_head": 0.4661,
+    "INTR-R1|head_iou": 0.159,
+    "INTR-R1|class_iou": 0.1642,
+    "INTR-R2|class_iou": 0.0795
+  }
+}

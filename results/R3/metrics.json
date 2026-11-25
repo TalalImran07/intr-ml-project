@@ -1,0 +1,13 @@
+{
+  "run": "R3",
+  "model": "ResNet-50 (ImageNet-1K) fine-tuned",
+  "epochs": 30,
+  "top1": 93.0,
+  "top5": 99.37,
+  "n_test": 3669,
+  "top1_without_cross_split_dups": 92.96,
+  "n_test_without_dups": 3650,
+  "paper_top1_pet_resnet50": 89.5,
+  "train_hours": 1.45,
+  "weights_sha256": "e78804b42c831704600626861fef619fba87285d9afe4276b42f6e2bc0ecd3b2"
+}
