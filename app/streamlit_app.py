@@ -100,19 +100,20 @@ p_top = float(r["probs"][top])
 left, right = st.columns([1, 1.25])
 with left:
     st.image(r["image"], caption="Input image", width="stretch")
+    with st.expander("Confidence and top-5 breeds"):
+        st.markdown(f"Confidence: **{p_top:.1%}**")
+        top5 = pd.DataFrame({"Breed": [pred.classes[i] for i in r["order"][:5]],
+                             "Probability": [float(r["probs"][i]) for i in r["order"][:5]]})
+        st.dataframe(top5, hide_index=True, width="stretch",
+                     column_config={"Probability": st.column_config.ProgressColumn(
+                         format="%.3f", min_value=0.0, max_value=1.0)})
 with right:
     species = pred.species[top]
     st.subheader(f"{pred.classes[top]}  ·  {species}")
-    st.markdown(f"Confidence: **{p_top:.1%}**")
     if p_top < threshold:
         st.warning(f"Low confidence ({p_top:.0%}). The model always answers with one of its "
                    "37 breeds, so this photo may show another breed, a mixed breed, or not a "
                    "cat or dog at all.")
-    top5 = pd.DataFrame({"Breed": [pred.classes[i] for i in r["order"][:5]],
-                         "Probability": [float(r["probs"][i]) for i in r["order"][:5]]})
-    st.dataframe(top5, hide_index=True, width="stretch",
-                 column_config={"Probability": st.column_config.ProgressColumn(
-                     format="%.3f", min_value=0.0, max_value=1.0)})
 
 # ------------------------------------------------------------------ explanations
 st.divider()
