@@ -65,17 +65,7 @@ st.sidebar.title("🐾 INTR demo")
 if not ensure_weights():
     st.stop()
 pred = get_predictor(str(WEIGHTS))
-cfg, met = pred.config, pred.metrics
-st.sidebar.markdown(
-    f"**Model:** INTR (DETR-R50), {cfg['num_queries']} class queries, "
-    f"{cfg['dec_heads']} cross-attention heads\n\n"
-    f"**Trained on:** Oxford-IIIT Pet, 37 breeds\n\n"
-    + (f"**Test accuracy:** top-1 {met['top1']}%, top-5 {met['top5']}% "
-       f"(paper: 90.4%)\n\n" if "top1" in met else "")
-    + f"**Weights file:** `{WEIGHTS.name}`\n\n**SHA-256:** `{pred.weights_sha256[:16]}…`")
-with st.sidebar.expander("Full SHA-256 (matches the report)"):
-    st.code(pred.weights_sha256, language=None)
-st.sidebar.divider()
+cfg = pred.config
 layer = st.sidebar.select_slider("Decoder layer shown", options=list(range(1, cfg["dec_layers"] + 1)),
                                  value=cfg["dec_layers"],
                                  help="The paper visualises the last (6th) decoder layer.")
@@ -87,10 +77,6 @@ if COMPARE.exists():
     if st.sidebar.toggle("Compare with the 1-head model (R2)", value=False,
                          help="Our ablation: identical training, but 1 cross-attention head instead of 8."):
         pred2 = get_predictor(str(COMPARE))
-        st.sidebar.markdown(f"**R2 weights:** `{COMPARE.name}`\n\n**SHA-256:** "
-                            f"`{pred2.weights_sha256[:16]}…`"
-                            + (f"\n\n**R2 test top-1:** {pred2.metrics['top1']}%"
-                               if "top1" in pred2.metrics else ""))
 
 # ------------------------------------------------------------------ input
 st.title("Which breed is it — and where did the model look?")
@@ -191,5 +177,6 @@ with st.expander("Pipeline details and raw model output (proof the answer comes 
                                "Probability": r["probs"].round(5)})
                  .sort_values("Logit", ascending=False), hide_index=True,
                  width="stretch")
-    st.caption(f"Model loaded in {pred.load_seconds:.1f} s on CPU · weights SHA-256 "
-               f"{pred.weights_sha256}")
+    st.caption(f"Model loaded in {pred.load_seconds:.1f} s on CPU · {WEIGHTS.name} SHA-256 "
+               f"{pred.weights_sha256}"
+               + (f" · {COMPARE.name} SHA-256 {pred2.weights_sha256}" if pred2 is not None else ""))
