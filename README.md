@@ -126,14 +126,15 @@ Pipeline: **input photo → preprocessing (short side 384 px, RGB, ImageNet norm
 ```bash
 pip install -r requirements.txt
 # put the trained weights at weights/intr_pet_R1.pth (download link at the top of this file)
-python prepare_data.py --root data      # optional: enables the "random test image" tab
 streamlit run app/streamlit_app.py      # opens http://localhost:8501
 ```
 
-* **Input:** a JPG/PNG upload, a camera photo, or a random image from the official test set.
-* **Output:** the predicted breed and species, top-5 probabilities, a low-confidence warning,
-  the attention map of every head for the predicted breed, the same maps for any other
-  top-5 breed ("why not X?"), the raw logits, timings, and the SHA-256 of the weights file.
+* **Input:** one JPG/PNG/WebP/BMP photo of a cat or dog, uploaded in the browser.
+* **Output:** the predicted breed and species with its confidence, the top-5 breeds, a
+  low-confidence warning, the attention map of every head for the predicted breed, the same
+  maps for any other top-5 breed ("why not X?"), and a collapsible panel with the pipeline
+  steps (input size, preprocessed size, feature grid, timing), the raw logits and the SHA-256
+  of the weights file.
 * Runs on CPU (no GPU needed); about 0.3–1 s per image on a laptop.
 * **Ablation view (optional):** put the 1-head model at `weights/intr_pet_R2.pth` and switch on
   *Compare with the 1-head model (R2)* in the sidebar to see R2's prediction and single

@@ -23,7 +23,6 @@ from intr_pet.inference import INTRPredictor, heatmap_overlay  # noqa: E402
 WEIGHTS = Path(os.environ.get("INTR_WEIGHTS", ROOT / "weights" / "intr_pet_R1.pth"))
 WEIGHTS_URL = os.environ.get("INTR_WEIGHTS_URL", "")      # Hugging Face link, added later
 COMPARE = Path(os.environ.get("INTR_COMPARE_WEIGHTS", ROOT / "weights" / "intr_pet_R2.pth"))
-DATA_ROOT = Path(os.environ.get("INTR_DATA", ROOT / "data"))
 
 st.set_page_config(page_title="INTR · Interpretable pet breed classifier", page_icon="🐾",
                    layout="wide")
@@ -99,32 +98,11 @@ st.caption("INTR gives every breed its own query that searches the image. The an
            "breed whose search found the strongest evidence; its attention maps show where "
            "it found it.")
 
-tab_up, tab_cam, tab_test = st.tabs(["📁 Upload a photo", "📷 Camera", "🧪 Random test image"])
-image, true_label = None, None
-with tab_up:
-    f = st.file_uploader("Cat or dog photo", type=["jpg", "jpeg", "png", "webp", "bmp"])
-    if f:
-        image = Image.open(f)
-with tab_cam:
-    c = st.camera_input("Take a photo")
-    if c:
-        image = Image.open(c)
-with tab_test:
-    split_file = DATA_ROOT / "pet_split.csv"
-    if split_file.exists():
-        if st.button("Pick a random image from the official test set"):
-            df = pd.read_csv(split_file)
-            row = df[df.split == "test"].sample(1).iloc[0]
-            st.session_state["test_pick"] = (str(DATA_ROOT / row.rel_path), row.breed)
-        if "test_pick" in st.session_state and image is None:
-            path, true_label = st.session_state["test_pick"]
-            image = Image.open(path)
-    else:
-        st.info("Test images not found locally (run `python prepare_data.py --root data`).")
-
-if image is None:
-    st.info("Upload a photo, take one with the camera, or pick a test image to start.")
+f = st.file_uploader("Upload a cat or dog photo", type=["jpg", "jpeg", "png", "webp", "bmp"])
+if f is None:
+    st.info("Upload a photo to start.")
     st.stop()
+image = Image.open(f)
 
 # ------------------------------------------------------------------ pipeline
 t0 = time.perf_counter()
@@ -133,26 +111,13 @@ total_ms = (time.perf_counter() - t0) * 1000
 top = r["order"][0]
 p_top = float(r["probs"][top])
 
-steps = st.columns(5)
-steps[0].metric("① Input", f"{r['original_size'][1]}×{r['original_size'][0]}")
-steps[1].metric("② Preprocessed", f"{r['input_size'][1]}×{r['input_size'][0]}",
-                help="Short side resized to 384 px (aspect ratio kept), RGB, ImageNet normalisation")
-steps[2].metric("③ INTR model", f"{r['grid'][1]}×{r['grid'][0]} grid",
-                help="ResNet-50 + Transformer encoder feature grid searched by 37 class queries")
-steps[3].metric("④ Prediction", f"{p_top:.0%}")
-steps[4].metric("⑤ Time (CPU)", f"{total_ms:.0f} ms",
-                help=f"preprocess {r['timings']['preprocess_ms']:.0f} ms, "
-                     f"model {r['timings']['model_ms']:.0f} ms")
-
 left, right = st.columns([1, 1.25])
 with left:
     st.image(r["image"], caption="Input image", width="stretch")
 with right:
     species = pred.species[top]
     st.subheader(f"{pred.classes[top]}  ·  {species}")
-    if true_label:
-        ok = true_label == pred.classes[top]
-        (st.success if ok else st.error)(f"True label (test set): {true_label}")
+    st.markdown(f"Confidence: **{p_top:.1%}**")
     if p_top < threshold:
         st.warning(f"Low confidence ({p_top:.0%}). The model always answers with one of its "
                    "37 breeds, so this photo may show another breed, a mixed breed, or not a "
@@ -182,9 +147,9 @@ if pred2 is not None:
                "cross-attention heads in the decoder. R1 splits its search into 8 maps, R2 does "
                "a single search.")
     c1, c2 = st.columns(2)
-    c1.metric("R1 (8 heads) predicts", pred.classes[top], f"{p_top:.1%}", delta_color="off")
-    c2.metric("R2 (1 head) predicts", pred2.classes[top2], f"{float(r2['probs'][top2]):.1%}",
-              delta_color="off")
+    c1.markdown(f"**R1 (8 heads) predicts:** {pred.classes[top]} ({p_top:.1%})")
+    c2.markdown(f"**R2 (1 head) predicts:** {pred2.classes[top2]} "
+                f"({float(r2['probs'][top2]):.1%})")
     if not agree:
         st.info("The two models disagree on this image.")
     cols = st.columns(3)
@@ -197,7 +162,7 @@ if pred2 is not None:
         st.image(heatmap_overlay(r["image"], r2["attention"][0, top2], alpha), width=300,
                  caption=f"R2's map for its own prediction ({pred2.classes[top2]})")
     st.caption(f"Same breed query, same decoder layer ({layer}). R1's 8 individual head maps are "
-               f"shown above. R2 inference: {ms2:.0f} ms.")
+               "shown above.")
 
 st.divider()
 st.subheader("Why not another breed?")
@@ -208,7 +173,20 @@ st.caption("Every breed searches the same image. A wrong breed usually finds wea
            "scattered evidence.")
 head_grid(r["image"], r["attention"][:, choice], alpha, title_prefix=f"{pred.classes[choice]}: ")
 
-with st.expander("Raw model output (proof the answer comes from the model)"):
+with st.expander("Pipeline details and raw model output (proof the answer comes from the model)"):
+    h, w = r["original_size"]
+    ih, iw = r["input_size"]
+    gh, gw = r["grid"]
+    st.markdown(
+        f"1. **Input:** {w}×{h} pixels\n"
+        f"2. **Preprocessing:** short side resized to 384 px (aspect ratio kept), RGB, ImageNet "
+        f"normalisation → {iw}×{ih}\n"
+        f"3. **INTR model:** ResNet-50 + Transformer encoder → {gw}×{gh} feature grid, searched by "
+        f"37 class queries in 6 decoder layers\n"
+        f"4. **Prediction:** softmax over 37 logits → {pred.classes[top]} ({p_top:.1%})\n"
+        f"5. **Time on CPU:** {total_ms:.0f} ms (preprocessing {r['timings']['preprocess_ms']:.0f} ms, "
+        f"model {r['timings']['model_ms']:.0f} ms)"
+        + (f"; R2: {ms2:.0f} ms" if pred2 is not None else ""))
     st.dataframe(pd.DataFrame({"Breed": pred.classes, "Logit": r["logits"].round(4),
                                "Probability": r["probs"].round(5)})
                  .sort_values("Logit", ascending=False), hide_index=True,
